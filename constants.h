@@ -23,4 +23,6 @@ const int HOOK_LENGTH_INCREMENT = 5;
 
 const int MAX_HOOK_LENGTH = 300;
 
+const std::string destination = "high_score.txt";
 #endif // !CONSTANTS_H
+

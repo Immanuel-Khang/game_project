@@ -70,7 +70,7 @@ namespace GoldMiner {
                 SDL_Rect playerRect = { m_player.x, m_player.y, PLAYER_WIDTH, PLAYER_HEIGHT };
                 SDL_RenderCopy(m_renderer, m_player.texture, NULL, &playerRect);
 
-                //Render golds that are not collected
+                // Render golds that are not collected
                 for (int i = 0; i < m_gold.size(); i++) {
                     if (!m_gold[i].collected) {
                         SDL_RenderCopy(m_renderer, m_goldTexture, NULL, &m_gold[i].rect);
@@ -146,23 +146,44 @@ namespace GoldMiner {
             }
             else // Game is over, render the end message in GameState::Game
             {
-                SDL_SetRenderDrawColor(m_renderer, 193, 154, 107, 255);
+                SDL_SetRenderDrawColor(m_renderer, 210, 180, 140, 255);
                 SDL_RenderClear(m_renderer);
+
+                // Calculate the center and a vertical offset
+                int centerX = m_width / 2;
+                int centerY = m_height / 2;
+                int verticalOffset = 20; // Adjust as needed for spacing between lines
 
                 if (m_congratsTexture != nullptr) {
                     SDL_Rect congratsRect;
                     SDL_QueryTexture(m_congratsTexture, NULL, NULL, &congratsRect.w, &congratsRect.h);
-                    congratsRect.x = m_width / 2 - congratsRect.w / 2;
-                    congratsRect.y = m_height / 2 - congratsRect.h / 2;
+                    congratsRect.x = centerX - congratsRect.w / 2;
+                    congratsRect.y = centerY - congratsRect.h / 2 - verticalOffset; // Shifted up
                     SDL_RenderCopy(m_renderer, m_congratsTexture, NULL, &congratsRect);
+
+                    if (m_highestScoreTexture != nullptr) {
+                        SDL_Rect highestScoreRect;
+                        SDL_QueryTexture(m_highestScoreTexture, NULL, NULL, &highestScoreRect.w, &highestScoreRect.h);
+                        highestScoreRect.x = centerX - highestScoreRect.w / 2;
+                        highestScoreRect.y = centerY + congratsRect.h / 2 + verticalOffset; // Shifted down, below congrats
+                        SDL_RenderCopy(m_renderer, m_highestScoreTexture, NULL, &highestScoreRect);
+                    }
                 }
 
                 if (m_sorryTexture != nullptr) {
                     SDL_Rect sorryRect;
                     SDL_QueryTexture(m_sorryTexture, NULL, NULL, &sorryRect.w, &sorryRect.h);
-                    sorryRect.x = m_width / 2 - sorryRect.w / 2;
-                    sorryRect.y = m_height / 2 - sorryRect.h / 2;
+                    sorryRect.x = centerX - sorryRect.w / 2;
+                    sorryRect.y = centerY - sorryRect.h / 2 - verticalOffset;  // Shifted up
                     SDL_RenderCopy(m_renderer, m_sorryTexture, NULL, &sorryRect);
+
+                    if (m_highestScoreTexture != nullptr) {
+                        SDL_Rect highestScoreRect;
+                        SDL_QueryTexture(m_highestScoreTexture, NULL, NULL, &highestScoreRect.w, &highestScoreRect.h);
+                        highestScoreRect.x = centerX - highestScoreRect.w / 2;
+                        highestScoreRect.y = centerY + sorryRect.h / 2 + verticalOffset;  // Shifted down, below sorry message
+                        SDL_RenderCopy(m_renderer, m_highestScoreTexture, NULL, &highestScoreRect);
+                    }
                 }
             }
             break;

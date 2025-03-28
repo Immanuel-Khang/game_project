@@ -2,7 +2,8 @@
 #include <cstdlib>
 #include <ctime>
 #include <SDL_image.h>
-#include <sstream> // Required for stringstreams
+#include <sstream>
+#include <fstream>
 
 #include "utility.h"
 #include "constants.h"
@@ -25,18 +26,49 @@ namespace GoldMiner {
     void Game::updateTimerTexture() {
         std::stringstream ss;
         ss << "Time: " << m_timerSeconds;
+        
         SDL_Color textColor;
         if (m_timerSeconds <= 10) {
             textColor = { 255, 0, 0 }; // Red if time is low
-        }
-        else {
+        } else {
             textColor = { 193, 154, 107 };
         }
+
         SDL_Texture* newTexture = loadTextTexture(ss.str(), textColor);
         if (newTexture) {
             if (m_timerTexture) SDL_DestroyTexture(m_timerTexture);
             m_timerTexture = newTexture;
         }
+    }
+
+    void Game::update_highestScore(int final_Score, const std::string& des) {
+        std::ifstream score_read(des);
+        int current_Score = 0;
+
+        // Check if file exists and is readable
+        if (score_read) {
+            score_read >> current_Score;
+        }
+        score_read.close();
+
+        // Update only if the new score is higher
+        if (final_Score > current_Score) {
+            std::ofstream score_file(des, std::ios::trunc); // Overwrite the file
+            if (score_file) {
+                score_file << final_Score;
+            }
+            score_file.close();
+        }
+    }
+
+    void Game::renderHighestScore() {
+        std::ifstream input(destination); 
+        input >> m_highestscore; 
+
+        std::stringstream ss; 
+        ss << "Highest Score: " << m_highestscore; 
+        SDL_Color TextColor = { 178, 104, 200 };
+        m_highestScoreTexture = loadTextTexture(ss.str(), TextColor);
     }
 
     void Game::update() {
@@ -46,14 +78,14 @@ namespace GoldMiner {
             if (!m_hook.is_active) {
                 swingSpeedMultiplier += 0.001;
                 if (swingingRight) {
-                    m_hook.angle += ANGLE_SPEED * swingSpeedMultiplier; // Increase angle
-                    if (m_hook.angle >= M_PI) { // Max right swing (~162°)
+                    m_hook.angle += ANGLE_SPEED * swingSpeedMultiplier;
+                    if (m_hook.angle >= M_PI) { // Max right swing (~180Â°)
                         swingingRight = false; // Change direction
                     }
                 }
                 else {
                     m_hook.angle -= ANGLE_SPEED * swingSpeedMultiplier; // Decrease angle
-                    if (m_hook.angle <= 0) { // Max left swing (~18°)
+                    if (m_hook.angle <= 0) { // Max left swing (~0Â°)
                         swingingRight = true; // Change direction
                     }
                 }
@@ -67,7 +99,7 @@ namespace GoldMiner {
                 // Load congratulatory or sorry message based on the condition
                 SDL_Color color = { 178, 104, 200 };
                 if (m_gold.size() == 0) {
-                    std::string congrats = "Congratulations, you have finished the game!";
+                    std::string congrats = "Congratulations!";
                     m_congratsTexture = loadTextTexture(congrats, color);
                 }
                 else {
@@ -79,9 +111,17 @@ namespace GoldMiner {
 
             //Check if there is an end message active, count 5 seconds, switch to main menu.
             if (m_showEndMessage) {
+                // Update highest score
+                update_highestScore(m_score, destination);
+                renderHighestScore();
+
+                // reset the speed of the hook 
+                m_hook.angle = ANGLE_SPEED;
+                swingSpeedMultiplier = 1.5; 
+
                 Uint32 currentTime = SDL_GetTicks();
                 if (currentTime - m_endMessageTimer >= 5000) { // 5 seconds
-                    m_currentState = GameState::MainMenu; //Back to Main Menu!
+                    m_currentState = GameState::MainMenu; // Back to Main Menu!
                     m_showEndMessage = false;
 
                     //Clean up message at return
@@ -93,6 +133,9 @@ namespace GoldMiner {
                         SDL_DestroyTexture(m_sorryTexture);
                         m_sorryTexture = nullptr;
                     }
+
+                    // Add one more gold to the next round 
+                    ++gold_add;
                 }
             }
 

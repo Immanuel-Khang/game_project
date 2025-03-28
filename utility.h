@@ -3,6 +3,7 @@
 #define UTILITY_H
 
 #include <string>
+#include <fstream>
 #include <SDL.h>
 #include <vector>
 #include <SDL_ttf.h>
@@ -10,7 +11,6 @@
 #include "elements.h"
 
 namespace GoldMiner {
-
     enum class GameState {
         MainMenu,
         Game,
@@ -40,13 +40,13 @@ namespace GoldMiner {
         SDL_Texture* loadTextTexture(const std::string& text, SDL_Color color);
         TTF_Font* loadFont(const std::string& fontPath, int fontSize);
         TTF_Font* loadFontSmall(const std::string& fontPath, int fontSize);
-        
 
-        void close(); //Clean up the memory that the game used
+        void close(); 
         SDL_Renderer* getRenderer() const { return m_renderer; } 
         int getScore() const { return m_score; }
         void setScore(int score) { m_score = score; updateScoreTexture(); }
-
+        void update_highestScore(int final_Score, const std::string& des); 
+        void renderHighestScore(); 
         GameState getCurrentState() const { return m_currentState; }
         void setCurrentState(GameState state) { m_currentState = state; }
 
@@ -63,6 +63,8 @@ namespace GoldMiner {
         Hook m_hook;
 
         int m_score;
+        int m_highestscore; 
+        int gold_add; 
         SDL_Texture* m_scoreTexture;
         TTF_Font* m_font;
 
@@ -70,6 +72,7 @@ namespace GoldMiner {
         SDL_Texture* m_ropeTexture; 
         SDL_Texture* m_congratsTexture;
         SDL_Texture* m_sorryTexture;
+        SDL_Texture* m_highestScoreTexture; 
         Uint32 m_endMessageTimer; //Timer for game end messages.
         bool m_showEndMessage;
 
@@ -93,7 +96,7 @@ namespace GoldMiner {
         GameState m_currentState; // Current game state
         bool swingingRight; // Hook swing direction
 
-        float swingSpeedMultiplier; // Multiplier to increase swinging speed
+        double swingSpeedMultiplier; // Multiplier to increase swinging speed
     };
 }
 

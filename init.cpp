@@ -10,7 +10,7 @@
 #include "game_execution.h"
 
 namespace GoldMiner {
-    Game::Game(const char* title, int width, int height) : 
+    Game::Game(const char* title, int width, int height) :
         m_window(nullptr),
         m_renderer(nullptr),
         m_background(nullptr),
@@ -25,8 +25,10 @@ namespace GoldMiner {
         m_quitTextTexture(nullptr),
         m_congratsTexture(nullptr),
         m_sorryTexture(nullptr),
+        m_highestScoreTexture(nullptr),
         m_score(0),
-        m_timerSeconds(15),
+        m_highestscore(0),
+        m_timerSeconds(0),
         m_timerStartTicks(0),
         m_width(width),
         m_height(height),
@@ -37,7 +39,8 @@ namespace GoldMiner {
         m_endMessageTimer(0),
         m_showEndMessage(false), // Initialize the showEndMessage to false
         m_gameOver(false),
-        swingSpeedMultiplier(1.5f) // Initialize swingSpeedMultiplier to 1
+        swingSpeedMultiplier(1.5f), // Initialize swingSpeedMultiplier to 1
+        gold_add (0)
     
     {
         srand(static_cast<unsigned int>(time(NULL)));
@@ -53,16 +56,19 @@ namespace GoldMiner {
             std::cerr << "SDL initialization failed: " << SDL_GetError() << std::endl;
             return false;
         }
+        
         m_window = SDL_CreateWindow(m_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, m_width, m_height, SDL_WINDOW_SHOWN);
         if (!m_window) {
             std::cerr << "SDL window creation failed: " << SDL_GetError() << std::endl;
             return false;
         }
-        m_renderer = SDL_CreateRenderer(m_window, -1, SDL_RENDERER_ACCELERATED); // Read gWindow into gRenderer
+
+        m_renderer = SDL_CreateRenderer(m_window, -1, SDL_RENDERER_ACCELERATED);
         if (!m_renderer) {
             std::cerr << "SDL renderer creation failed: " << SDL_GetError() << std::endl;
             return false;
         }
+
         SDL_SetRenderDrawColor(m_renderer, 0xFF, 0xFF, 0xFF, 0xFF);
 
         // Initialize SDL_ttf
@@ -71,7 +77,7 @@ namespace GoldMiner {
             return false;
         }
 
-        //Load font
+        // Load font
         m_font = loadFont("assets/arial.ttf", 28);
 
         if (!m_font) return false;
@@ -109,6 +115,7 @@ namespace GoldMiner {
         m_tickSound = LoadSoundEffect("assets/tick_sound.wav");
         if (!m_tickSound) return false;
 
+        // Modify the music volume
         Mix_VolumeChunk(m_goldCollisionSound, MIX_MAX_VOLUME / 3);
         Mix_VolumeChunk(m_tickSound, MIX_MAX_VOLUME / 4);
         
@@ -116,10 +123,11 @@ namespace GoldMiner {
         m_player.y = 68;
 
         m_gold.clear();
-        m_gold.resize(NUM_GOLD);
-        for (int i = 0; i < NUM_GOLD; ++i) {
-            m_gold[i].x = rand() % (m_width - 60) + 20; // Ensure gold doesn't spawn out of bounds
-            m_gold[i].y = m_height / 2 + rand() % (m_height / 2 - 60) + 20; //Ensure gold doesn't spawn out of bounds, min size is 20, max size is 80
+        int total = NUM_GOLD + gold_add; 
+        m_gold.resize(total);
+        for (int i = 0; i < total; ++i) {
+            m_gold[i].x = rand() % (m_width - 60); // Ensure gold doesn't spawn out of bounds
+            m_gold[i].y = m_height / 2 + rand() % (m_height / 2 - 60); 
             m_gold[i].collected = false;
             m_gold[i].size = rand() % 61 + 20; // Random size between 20 and 80
             m_gold[i].rect = { m_gold[i].x, m_gold[i].y, m_gold[i].size, m_gold[i].size };
@@ -128,7 +136,7 @@ namespace GoldMiner {
         }
 
         m_hook.x = m_player.x + PLAYER_WIDTH / 2;
-        m_hook.y = m_player.y + PLAYER_HEIGHT; //Position hook under the player
+        m_hook.y = m_player.y + PLAYER_HEIGHT; // Position hook rightunder the player
         m_hook.length = 0;
         m_hook.angle = M_PI / 2;
         m_hook.is_active = false;
@@ -136,7 +144,7 @@ namespace GoldMiner {
         m_hook.attachedGoldIndex = -1; // Initially, no gold is attached
 
         m_score = 0;
-        m_timerSeconds = 15;
+        m_timerSeconds = 20;
         updateScoreTexture();
         updateTimerTexture();
         m_timerStartTicks = SDL_GetTicks();
